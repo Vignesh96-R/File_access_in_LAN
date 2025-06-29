@@ -5,3 +5,10 @@ __________ Previous commit changes __________
 
 __________  Current commit changes __________ 
 1. Delete option for image in grid view only
+
+
+___________  Share path through network   ___________
+By default the data is configured to view from get_base_dir - as desktop folder
+Root folder - /Desktop
+Sub folder - /LANDataCenter
+full path - /Desktop/LANDataCenter

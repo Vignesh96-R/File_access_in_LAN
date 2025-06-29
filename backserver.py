@@ -5,6 +5,8 @@ import socket
 import time
 import mimetypes
 from email import policy
+import os
+import platform
 from flask import Flask, render_template_string, request, abort, send_file, Response, url_for, redirect
 
 app = Flask(__name__)
@@ -73,6 +75,33 @@ def get_file_info(path, name):
         'timestamp': stat.st_mtime,
         'type': 'directory' if is_dir else get_file_type(name)
     }
+
+
+def get_base_dir():
+    # Get the current file's absolute path
+    current_path = os.path.abspath(__file__)
+    
+    # Normalize path for consistent splitting
+    normalized_path = os.path.normpath(current_path)
+    path_parts = normalized_path.split(os.sep)
+
+    # Platform-specific desktop folder detection
+    if platform.system() == 'Windows':
+        if 'Desktop' in path_parts:
+            desktop_index = path_parts.index('Desktop')
+            base_path = os.sep.join(path_parts[:desktop_index + 1])
+            return os.path.join(base_path, 'LAN Network file share', 'Project code')
+    else:
+        # macOS / Linux
+        if 'Desktop' in path_parts:
+            desktop_index = path_parts.index('Desktop')
+            base_path = os.sep.join(path_parts[:desktop_index + 1])
+            return os.path.join(base_path, 'LANDataCenter')
+
+    # Fallback if Desktop is not found
+    return os.path.expanduser('~/Desktop/LAN Network file share/Project code')
+
+
 
 def get_file_type(filename):
     """Determine the file type category"""
@@ -177,12 +206,17 @@ def get_sibling_images(current_path):
     images.sort(key=lambda x: x['name'])
     return images
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Project code'))
+print(f"[INFO] BASE_DIR is set to: {BASE_DIR}")
+print(get_base_dir())
+
 @app.route('/')
 @app.route('/browse/')
 @app.route('/browse/<path:subpath>')
 def file_selector(subpath=''):
     # Get current directory path
-    current_path = os.path.join('.', subpath)
+    # current_path = os.path.join('.', subpath)
+    current_path = os.path.join(get_base_dir(), subpath)
     if not os.path.exists(current_path):
         abort(404, "Directory not found")
     
@@ -796,6 +830,7 @@ def upload_file():
         <p><a href="/browse/{{ upload_path.strip('./') }}">← Back</a></p>
         </body></html>
     ''', upload_path=upload_path)
+
 
 @app.route('/download/<path:filename>')
 def download_file(filename):
