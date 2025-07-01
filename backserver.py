@@ -174,7 +174,7 @@ def get_file_preview(full_path):
         elif file_type in ['text', 'code']:
             with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
                 content = f.read()
-            return f'<pre style="white-space: pre-wrap;">{content}</pre>', 'text/html'
+            return f'<pre style="white-space: pre-wrap; background: #fff; color: #111; padding: 16px; border-radius: 6px;">{content}</pre>', 'text/html'
         
         else:
             # For unsupported types, show file info and download option
@@ -469,6 +469,56 @@ def file_selector(subpath=''):
                     background: #ff3333;
                     color: #fff;
                 }
+                .delete-btn-fullview {
+                    margin-left: 10px;
+                    background: #FFFFFF;
+                    color: #fff;
+                    border: none;
+                    border-radius: 5px;
+                    padding: 6px 16px;
+                    font-size: 1em;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                .delete-btn-fullview:hover {
+                    background: #b71c1c;
+                }
+                .delete-float-btn {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    background: rgba(229,57,53,0.9);
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    font-size: 1.5em;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    pointer-events: auto;
+                }
+                .delete-float-btn:hover {
+                    background: #b71c1c;
+                }
+                .delete-btn-list {
+                    margin-left: 10px;
+                    background: #FFFFFF;
+                    color: #fff;
+                    border: none;
+                    border-radius: 5px;
+                    padding: 4px 10px;
+                    font-size: 1em;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                .delete-btn-list:hover {
+                    background: #b71c1c;
+                }
             </style>
         </head>
         <body>
@@ -537,8 +587,8 @@ def file_selector(subpath=''):
                         {% for item in filtered_items %}
                             <div class="grid-item">
                                 <button class="delete-btn" 
-                                        onclick="deleteImage('{{ item.rel_path }}', '{{ item.name }}')"
-                                        title="Delete this image">×</button>
+                                        onclick="deleteFileFromList(event, '{{ item.rel_path }}', '{{ item.name }}')"
+                                        title="Delete this image">🗑️</button>
                                 <a href="/view/{{ item.rel_path }}" onclick="storePrevPath(event)">
                                     <img src="/raw/{{ item.rel_path }}" 
                                          alt="{{ item.name }}" 
@@ -553,17 +603,22 @@ def file_selector(subpath=''):
                 {% else %}
                     <!-- Existing list view for other file types -->
                     {% for item in filtered_items %}
-                        <a href="{% if item.type == 'directory' %}/browse/{{ subpath }}/{{ item.name }}{% else %}/view/{{ item.rel_path }}{% endif %}" {% if item.type != 'directory' %}onclick="storePrevPath(event)"{% endif %}>
-                            <span class="file-icon">{{ file_icons[item.type] }}</span>
-                            {{ item.name }}
+                        <div style="display: flex; align-items: center; position: relative;">
+                            <a href="{% if item.type == 'directory' %}/browse/{{ subpath }}/{{ item.name }}{% else %}/view/{{ item.rel_path }}{% endif %}" {% if item.type != 'directory' %}onclick="storePrevPath(event)"{% endif %} style="flex: 1 1 auto;">
+                                <span class="file-icon">{{ file_icons[item.type] }}</span>
+                                {{ item.name }}
+                                {% if item.type != 'directory' %}
+                                <span class="file-info">
+                                    <span class="file-type">{{ item.type|upper }}</span>
+                                    <span class="file-size">{{ (item.size/1024)|round(2) }} KB</span>
+                                    <span class="file-date">{{ item.modified }}</span>
+                                </span>
+                                {% endif %}
+                            </a>
                             {% if item.type != 'directory' %}
-                            <span class="file-info">
-                                <span class="file-type">{{ item.type|upper }}</span>
-                                <span class="file-size">{{ (item.size/1024)|round(2) }} KB</span>
-                                <span class="file-date">{{ item.modified }}</span>
-                            </span>
+                            <button class="delete-btn-list" onclick="deleteFileFromList(event, '{{ item.rel_path }}', '{{ item.name }}')" title="Delete this file">🗑️</button>
                             {% endif %}
-                        </a>
+                        </div>
                     {% endfor %}
                 {% endif %}
             {% else %}
@@ -580,9 +635,10 @@ def file_selector(subpath=''):
                     event.target.classList.add('active');
                 }
                 
-                function deleteImage(fullPath, fileName) {
+                function deleteFileFromList(event, relPath, fileName) {
+                    event.preventDefault();
                     if (confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) {
-                        fetch('/delete/' + encodeURIComponent(fullPath), {
+                        fetch('/delete/' + encodeURIComponent(relPath), {
                             method: 'DELETE'
                         })
                         .then(response => {
@@ -594,7 +650,6 @@ def file_selector(subpath=''):
                             }
                         })
                         .catch(error => {
-                            console.error('Error deleting file:', error);
                             alert('Error deleting file: ' + error.message);
                         });
                     }
@@ -616,6 +671,25 @@ def file_selector(subpath=''):
                     } else {
                         window.location.href = "/browse/";
                     }
+                }
+
+                // Delete current file in full view
+                function deleteCurrentFile(event, relPath) {
+                    event.preventDefault();
+                    if (!confirm('Are you sure you want to delete this file? This cannot be undone.')) return;
+                    fetch('/delete/' + encodeURIComponent(relPath), {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            handleBack();
+                        } else {
+                            alert('Failed to delete file. Server responded with status: ' + response.status);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error deleting file: ' + error.message);
+                    });
                 }
             </script>
         </body>
@@ -663,6 +737,7 @@ def view_file(filename):
                 break
     
     preview_content, content_type = get_file_preview(abs_path)
+    rel_path = filename  # filename is already relative in the route
     
     return render_template_string('''
         <!DOCTYPE html>
@@ -760,6 +835,10 @@ def view_file(filename):
             </style>
         </head>
         <body>
+            <!-- Floating delete icon for all files except directories -->
+            {% if file_type != 'directory' %}
+            <button class="delete-float-btn" onclick="deleteCurrentFile(event, '{{ rel_path }}')" title="Delete this file">🗑️</button>
+            {% endif %}
             <!-- Close icon for full screen image view -->
             {% if file_type == 'image' %}
             <button class="close-btn" onclick="handleBack(event)" title="Close (Esc)">Close</button>
@@ -767,6 +846,9 @@ def view_file(filename):
             <div class="toolbar">
                 <a href="#" onclick="handleBack(event)">Back</a>
                 <a href="/download/{{ filename }}" download>Download</a>
+                {% if file_type != 'directory' %}
+                <button class="delete-btn-fullview" onclick="deleteCurrentFile(event, '{{ rel_path }}')" title="Delete this file">🗑️ Delete</button>
+                {% endif %}
             </div>
             
             <!-- Navigation arrows -->
