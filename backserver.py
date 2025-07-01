@@ -809,9 +809,9 @@ def upload_file():
         if not file or file.filename == '':
             return "No file selected", 400
         try:
-            save_path = os.path.join(upload_path, file.filename)
+            save_path = os.path.join(get_base_dir(), file.filename)
             file.save(save_path)
-            return redirect(f"/browse/{upload_path.strip('./')}")
+            return redirect(f"/upload?path=/{upload_path.strip('./')}")
         except Exception as e:
             return f"Error: {str(e)}", 500
 
