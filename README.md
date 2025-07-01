@@ -1,42 +1,21 @@
-# LAN Network File Share
+# File Access in LAN
 
-A web-based file sharing and management tool for local area networks (LAN), built with Flask. This project allows users to browse, preview, upload, download, and manage files on a shared directory over the LAN.
+This project is being refactored into a modular Flask application with the following structure:
 
-## Features
-- Browse files and directories on a shared folder
-- Preview images, videos, audio, PDFs, MHTML, and text/code files in-browser
-- Download and upload files
-- Delete files (with confirmation)
-- Filter and search files by type, name, or extension
-- Responsive web interface for easy navigation
+```
+File_access_in_LAN/
+  app/
+    __init__.py
+    routes.py
+    utils.py
+    file_ops.py
+    config.py
+    templates/
+  tests/
+  run.py
+  README.md
+  requirements.txt
+```
 
-## Project Structure (after refactor)
-- `backserver.py` — Main Flask application logic
-- `templates/` — HTML templates for rendering web pages
-- `static/` — Static files (CSS, JS, images)
-
-## Installation
-1. **Clone the repository:**
-   ```bash
-   git clone <repo-url>
-   cd File_access_in_LAN
-   ```
-2. **Install dependencies:**
-   ```bash
-   pip install flask
-   ```
-
-## Usage
-1. **Run the server:**
-   ```bash
-   python backserver.py
-   ```
-2. **Access the web interface:**
-   Open your browser and go to `http://<your-local-ip>:5000/`
-
-   (The local IP will be shown in the terminal when you start the server.)
-
-## Notes
-- Make sure the shared directory is accessible and has the necessary permissions.
-- The project will be refactored to use Flask best practices (separating templates and static files).
-- For any issues, please open an issue or contact the maintainer.
+- Run the app with `python run.py`.
+- All Flask logic is now modularized in the `app/` package.

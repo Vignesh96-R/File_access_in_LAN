@@ -1,0 +1,236 @@
+   <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{{ filename }}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap" rel="stylesheet">
+            <style>
+                body { margin: 0; padding: 0; background: #111; font-family: 'Inter', Arial, sans-serif; }
+                .content-container {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    padding: 0;
+                    box-sizing: border-box;
+                    overflow: auto;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    background: #111;
+                }
+                .toolbar {
+                    position: fixed;
+                    top: 18px;
+                    right: 18px;
+                    z-index: 100;
+                    background: #18181b;
+                    padding: 7px 14px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+                    display: flex;
+                    gap: 10px;
+                }
+                .toolbar a, .toolbar button {
+                    display: inline-block;
+                    padding: 7px 16px;
+                    margin: 0 2px;
+                    background: #2563eb;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    font-size: 1em;
+                    color: #fff;
+                    font-weight: 600;
+                    border: none;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                .toolbar a:hover, .toolbar button:hover {
+                    background: #1e40af;
+                    color: #fff;
+                }
+                pre {
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    background: #18181b;
+                    color: #f1f5f9;
+                    padding: 24px;
+                    border-radius: 12px;
+                    font-size: 1.1em;
+                    max-width: 90vw;
+                    max-height: 80vh;
+                    overflow: auto;
+                }
+                .image-container {
+                    max-width: 90vw;
+                    max-height: 80vh;
+                    text-align: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .image-container img {
+                    max-width: 100%;
+                    max-height: 80vh;
+                    object-fit: contain;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+                }
+                .nav-arrow {
+                    position: fixed;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-size: 48px;
+                    color: #fff;
+                    text-decoration: none;
+                    background: rgba(37,99,235,0.7);
+                    width: 60px;
+                    height: 100px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    opacity: 0.7;
+                    transition: opacity 0.3s, background 0.2s;
+                    z-index: 101;
+                    border-radius: 0 12px 12px 0;
+                }
+                .nav-arrow.next-arrow {
+                    right: 0;
+                    left: auto;
+                    border-radius: 12px 0 0 12px;
+                }
+                .nav-arrow.prev-arrow {
+                    left: 0;
+                    right: auto;
+                }
+                .nav-arrow:hover {
+                    opacity: 1;
+                    background: #2563eb;
+                }
+                .nav-arrow.hidden {
+                    display: none;
+                }
+                .close-btn {
+                    position: fixed;
+                    top: 18px;
+                    left: 18px;
+                    z-index: 9999;
+                    background: #18181b;
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 44px;
+                    height: 44px;
+                    font-size: 1.3em;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    pointer-events: auto;
+                    font-weight: 600;
+                }
+                .close-btn:hover {
+                    background: #ef4444;
+                    color: #fff;
+                }
+                .delete-float-btn {
+                    position: fixed;
+                    top: 18px;
+                    right: 80px;
+                    z-index: 9999;
+                    background: #ef4444;
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 44px;
+                    height: 44px;
+                    font-size: 1.3em;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    pointer-events: auto;
+                    font-weight: 600;
+                }
+                .delete-float-btn:hover {
+                    background: #b91c1c;
+                }
+                .delete-btn-fullview {
+                    margin-left: 10px;
+                    background: #ef4444;
+                    color: #fff;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 7px 18px;
+                    font-size: 1em;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                .delete-btn-fullview:hover {
+                    background: #b91c1c;
+                }
+                @media (max-width: 700px) {
+                    .toolbar { top: 8px; right: 8px; padding: 4px 6px; }
+                    .close-btn, .delete-float-btn { top: 8px; left: 8px; right: 8px; width: 36px; height: 36px; font-size: 1em; }
+                    .content-container { padding: 0; }
+                    pre { padding: 10px; font-size: 1em; }
+                }
+            </style>
+        </head>
+        <body>
+            {% if file_type == 'image' %}
+            <button class="close-btn" onclick="handleBack(event)" title="Close (Esc)">✕</button>
+            {% endif %}
+            <div class="toolbar">
+                <a href="#" onclick="handleBack(event)">Back</a>
+                <a href="/download/{{ filename }}" download>Download</a>
+              
+            </div>
+            {% if nav_info and nav_info.prev %}
+                <a href="/view/{{ nav_info.prev }}" class="nav-arrow prev-arrow">❮</a>
+            {% else %}
+                <a class="nav-arrow prev-arrow hidden">❮</a>
+            {% endif %}
+            {% if nav_info and nav_info.next %}
+                <a href="/view/{{ nav_info.next }}" class="nav-arrow next-arrow">❯</a>
+            {% else %}
+                <a class="nav-arrow next-arrow hidden">❯</a>
+            {% endif %}
+            <div class="content-container">
+                {% if file_type == 'image' %}
+                    <div class="image-container">
+                        {{ content|safe }}
+                    </div>
+                {% else %}
+                    {{ content|safe }}
+                {% endif %}
+            </div>
+            <script>
+                document.addEventListener('keydown', function(event) {
+                    const prevLink = document.querySelector('.prev-arrow:not(.hidden)');
+                    const nextLink = document.querySelector('.next-arrow:not(.hidden)');
+                    if (event.key === 'ArrowLeft' && prevLink) {
+                        window.location.href = prevLink.href;
+                    } else if (event.key === 'ArrowRight' && nextLink) {
+                        window.location.href = nextLink.href;
+                    } else if (event.key === 'Escape') {
+                        handleBack();
+                    }
+                });
+                function handleBack(event) {
+                    if (event) event.preventDefault();
+                    const prevPath = sessionStorage.getItem('prevPath');
+                    if (prevPath) {
+                        sessionStorage.removeItem('prevPath');
+                        window.location.href = prevPath;
+                    } else {
+                        window.location.href = "/browse/";
+                    }
+                }
+            </script>
+        </body>
+        </html>
