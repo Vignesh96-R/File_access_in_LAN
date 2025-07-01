@@ -279,58 +279,127 @@ def file_selector(subpath=''):
         <html>
         <head>
             <title>File Browser - {{ subpath if subpath else 'Home' }}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap" rel="stylesheet">
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                a { display: block; padding: 8px; margin: 2px; 
-                    background: #f0f0f0; text-decoration: none; }
-                a:hover { background: #e0e0e0; }
-                .warning { color: red; margin: 20px 0; }
-                .network-info { 
-                    background: #eef; padding: 10px; 
-                    margin: 10px 0; border-radius: 5px;
+                body {
+                    font-family: 'Inter', Arial, sans-serif;
+                    margin: 0;
+                    background: #f7fafd;
+                    color: #222;
+                }
+                a {
+                    color: #2563eb;
+                    text-decoration: none;
+                    transition: color 0.2s;
+                }
+                a:hover {
+                    color: #1e40af;
+                }
+                .container {
+                    max-width: 1100px;
+                    margin: 32px auto;
+                    background: #fff;
+                    border-radius: 16px;
+                    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+                    padding: 32px 24px 24px 24px;
+                }
+                .breadcrumb {
+                    margin-bottom: 18px;
+                    font-size: 1.05em;
+                    background: #e0e7ef;
+                    border-radius: 8px;
+                    padding: 8px 16px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .breadcrumb a {
+                    color: #2563eb;
+                    font-weight: 600;
+                    background: none;
+                    padding: 0;
+                }
+                .breadcrumb span {
+                    color: #94a3b8;
+                }
+                .upload-btn {
+                    display: inline-block;
+                    margin-bottom: 18px;
+                    background: #2563eb;
+                    color: #fff;
+                    padding: 8px 18px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(37,99,235,0.07);
+                    transition: background 0.2s;
+                    border: none;
+                    cursor: pointer;
+                    position: absolute;
+                    right: 0;
+                }
+                .upload-btn:hover {
+                    background: #1e40af;
+                }
+                #upload-status {
+                    margin-left: 16px;
+                    font-weight: 500;
+                    color: #2563eb;
                 }
                 .filter-container {
-                    margin: 20px 0;
-                    padding: 15px;
-                    background: #f5f5f5;
-                    border-radius: 5px;
+                    margin: 18px 0 24px 0;
+                    padding: 18px 18px 10px 18px;
+                    background: #f1f5f9;
+                    border-radius: 10px;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+                }
+                .filter-container h3 {
+                    margin-top: 0;
+                    font-size: 1.1em;
+                    color: #2563eb;
                 }
                 .filter-options {
                     display: flex;
-                    gap: 15px;
+                    gap: 18px;
                     margin-bottom: 10px;
                     flex-wrap: wrap;
                 }
                 .filter-group {
                     display: flex;
                     align-items: center;
-                    gap: 5px;
+                    gap: 7px;
                 }
                 .search-box {
-                    padding: 8px;
-                    width: 300px;
-                    border-radius: 4px;
-                    border: 1px solid #ddd;
+                    padding: 8px 12px;
+                    width: 260px;
+                    border-radius: 6px;
+                    border: 1px solid #cbd5e1;
+                    background: #fff;
+                    font-size: 1em;
                 }
-                .file-info {
-                    font-size: 0.8em;
-                    color: #666;
-                    margin-left: 10px;
+                select {
+                    padding: 7px 10px;
+                    border-radius: 6px;
+                    border: 1px solid #cbd5e1;
+                    background: #fff;
+                    font-size: 1em;
                 }
-                .file-size {
-                    display: inline-block;
-                    width: 80px;
+                button[type="submit"], .type-filter-btn, .delete-btn-list {
+                    font-family: inherit;
+                    font-size: 1em;
+                    font-weight: 600;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 7px 16px;
+                    background: #2563eb;
+                    color: #fff;
+                    cursor: pointer;
+                    margin-right: 6px;
+                    transition: background 0.2s, box-shadow 0.2s;
+                    box-shadow: 0 1px 4px rgba(37,99,235,0.07);
                 }
-                .file-date {
-                    display: inline-block;
-                    width: 160px;
-                }
-                .file-type {
-                    display: inline-block;
-                    width: 80px;
-                }
-                .file-icon {
-                    margin-right: 5px;
+                button[type="submit"]:hover, .type-filter-btn:hover, .delete-btn-list:hover {
+                    background: #1e40af;
                 }
                 .type-filter-options {
                     display: flex;
@@ -339,61 +408,83 @@ def file_selector(subpath=''):
                     flex-wrap: wrap;
                 }
                 .type-filter-btn {
-                    padding: 5px 10px;
-                    border-radius: 15px;
-                    background: #e0e0e0;
+                    background: #e0e7ef;
+                    color: #2563eb;
                     border: none;
-                    cursor: pointer;
-                    white-space: nowrap;
+                    border-radius: 16px;
+                    padding: 6px 18px;
+                    font-weight: 600;
+                    transition: background 0.2s, color 0.2s;
+                    box-shadow: none;
                 }
-                .type-filter-btn:hover {
-                    background: #d0d0d0;
+                .type-filter-btn.active, .type-filter-btn:active {
+                    background: #2563eb;
+                    color: #fff;
                 }
-                .type-filter-btn.active {
-                    background: #4CAF50;
-                    color: white;
+                .file-list {
+                    margin-top: 18px;
                 }
-                .breadcrumb {
-                    margin: 10px 0;
-                    padding: 5px;
-                    background: #f0f0f0;
-                    border-radius: 5px;
+                .file-row {
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 0;
+                    border-bottom: 1px solid #e5e7eb;
+                    transition: background 0.15s;
                 }
-                .breadcrumb a {
+                .file-row:hover {
+                    background: #f1f5f9;
+                }
+                .file-icon {
+                    margin-right: 12px;
+                    font-size: 1.3em;
+                }
+                .file-info {
+                    font-size: 0.93em;
+                    color: #64748b;
+                    margin-left: 12px;
+                }
+                .file-size, .file-date, .file-type {
                     display: inline-block;
-                    padding: 2px 5px;
-                    background: none;
-                    color: #0066cc;
-                    text-decoration: underline;
+                    min-width: 80px;
                 }
-                .breadcrumb span {
-                    margin: 0 5px;
-                    color: #999;
+                .file-name {
+                    font-weight: 500;
+                    color: #222;
                 }
-                
-                /* Grid layout styles */
+                .delete-btn-list {
+                    margin-left: 16px;
+                    background: #ef4444;
+                    color: #fff;
+                    border-radius: 6px;
+                    padding: 6px 14px;
+                    font-size: 1em;
+                    font-weight: 600;
+                    transition: background 0.2s;
+                }
+                .delete-btn-list:hover {
+                    background: #b91c1c;
+                }
+                /* Grid layout for images */
                 .grid-container {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                    grid-gap: 15px;
-                    margin-top: 15px;
+                    grid-gap: 18px;
+                    margin-top: 18px;
                 }
-                
                 .grid-item {
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 10px;
                     overflow: hidden;
                     text-align: center;
-                    background: #fafafa;
-                    transition: transform 0.2s;
+                    background: #f8fafc;
+                    transition: transform 0.18s, box-shadow 0.18s;
                     position: relative;
+                    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
                 }
-                
                 .grid-item:hover {
-                    transform: scale(1.03);
-                    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+                    transform: scale(1.04);
+                    box-shadow: 0 4px 16px rgba(37,99,235,0.10);
                 }
-                
                 .grid-item a {
                     display: block;
                     padding: 10px;
@@ -401,297 +492,236 @@ def file_selector(subpath=''):
                     margin: 0 !important;
                     text-decoration: none !important;
                 }
-                
                 .grid-thumbnail {
                     width: 100%;
                     height: 120px;
                     object-fit: cover;
-                    background: #f0f0f0;
+                    background: #e0e7ef;
+                    border-bottom: 1px solid #e5e7eb;
                 }
-                
                 .grid-filename {
                     display: block;
                     margin-top: 8px;
-                    font-size: 0.85em;
+                    font-size: 1em;
                     word-break: break-word;
-                    color: #333;
+                    color: #222;
+                    font-weight: 500;
                 }
-                
                 .grid-info {
-                    font-size: 0.75em;
-                    color: #666;
+                    font-size: 0.93em;
+                    color: #64748b;
                     margin-top: 5px;
                 }
-                
-                /* Delete button styles */
                 .delete-btn {
                     position: absolute;
-                    top: 5px;
-                    right: 5px;
-                    background: rgba(255,0,0,0.7);
-                    color: white;
+                    top: 8px;
+                    right: 8px;
+                    background: #ef4444;
+                    color: #fff;
                     border: none;
                     border-radius: 50%;
-                    width: 24px;
-                    height: 24px;
+                    width: 28px;
+                    height: 28px;
                     cursor: pointer;
                     font-weight: bold;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 10;
+                    font-size: 1.1em;
+                    box-shadow: 0 1px 4px rgba(239,68,68,0.10);
+                    transition: background 0.2s;
                 }
-                
                 .delete-btn:hover {
-                    background: rgba(255,0,0,0.9);
+                    background: #b91c1c;
                 }
-
-                .close-btn {
-                    position: fixed;
-                    top: 20px;
-                    left: 20px;
-                    z-index: 9999;
-                    background: rgba(0,0,0,0.7);
-                    color: #fff;
-                    border: none;
-                    border-radius: 50%;
-                    width: 40px;
-                    height: 40px;
-                    font-size: 2em;
-                    cursor: pointer;
+                .warning {
+                    color: #ef4444;
+                    margin: 24px 0;
+                    font-weight: 600;
+                    background: #fef2f2;
+                    border-radius: 8px;
+                    padding: 12px 18px;
+                }
+                @media (max-width: 700px) {
+                    .container { padding: 10px 2vw; }
+                    .filter-container { padding: 10px 4vw; }
+                    .grid-container { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+                }
+                .breadcrumb-bar {
                     display: flex;
                     align-items: center;
-                    justify-content: center;
-                    transition: background 0.2s;
-                    pointer-events: auto;
-                }
-                .close-btn:hover {
-                    background: #ff3333;
-                    color: #fff;
-                }
-                .delete-btn-fullview {
-                    margin-left: 10px;
-                    background: #FFFFFF;
-                    color: #fff;
-                    border: none;
-                    border-radius: 5px;
-                    padding: 6px 16px;
-                    font-size: 1em;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-                .delete-btn-fullview:hover {
-                    background: #b71c1c;
-                }
-                .delete-float-btn {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 9999;
-                    background: rgba(229,57,53,0.9);
-                    color: #fff;
-                    border: none;
-                    border-radius: 50%;
-                    width: 40px;
-                    height: 40px;
-                    font-size: 1.5em;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: background 0.2s;
-                    pointer-events: auto;
-                }
-                .delete-float-btn:hover {
-                    background: #b71c1c;
-                }
-                .delete-btn-list {
-                    margin-left: 10px;
-                    background: #FFFFFF;
-                    color: #fff;
-                    border: none;
-                    border-radius: 5px;
-                    padding: 4px 10px;
-                    font-size: 1em;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-                .delete-btn-list:hover {
-                    background: #b71c1c;
+                    justify-content: space-between;
+                    margin-bottom: 18px;
+                    position: relative;
                 }
             </style>
         </head>
         <body>
-            <div class="breadcrumb">
-                <a href="/browse/">Home</a>
-                {% for crumb in breadcrumbs %}
-                    <span>/</span>
-                    <a href="/browse/{{ crumb.path }}">{{ crumb.name }}</a>
-                {% endfor %}
-            </div>
-            <p><a href="/upload?path={{ current_path }}">📤 Upload File Here</a></p>
-            
-            <div class="filter-container">
-                <h3>Filter Options</h3>
-                <form method="get" action="">
-                    <input type="hidden" name="file_type" id="file_type_input" value="{{ file_type_filter }}">
-                    
-                    <div class="type-filter-options">
-                        <button type="button" class="type-filter-btn {% if file_type_filter == 'all' %}active{% endif %}" 
-                                onclick="setFileType('all')">All Files</button>
-                        <button type="button" class="type-filter-btn {% if file_type_filter == 'directory' %}active{% endif %}" 
-                                onclick="setFileType('directory')">📁 Folders</button>
-                        {% for type in file_types %}
-                            <button type="button" class="type-filter-btn {% if file_type_filter == type %}active{% endif %}" 
-                                    onclick="setFileType('{{ type }}')">
-                                {{ file_icons[type] }} {{ type|capitalize }}
-                            </button>
+            <div class="container">
+                <div class="breadcrumb-bar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+                    <div class="breadcrumb" style="margin-bottom: 0;">
+                        <a href="/browse/">Home</a>
+                        {% for crumb in breadcrumbs %}
+                            <span>/</span>
+                            <a href="/browse/{{ crumb.path }}">{{ crumb.name }}</a>
                         {% endfor %}
                     </div>
-                    
-                    <div class="filter-options">
-                        <div class="filter-group">
-                            <label for="search">Search:</label>
-                            <input type="text" id="search" name="search" class="search-box" 
-                                   value="{{ search_term }}" placeholder="Search by filename">
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label for="filter_by">Sort by:</label>
-                            <select id="filter_by" name="filter_by">
-                                <option value="name" {% if filter_by == 'name' %}selected{% endif %}>Name</option>
-                                <option value="size" {% if filter_by == 'size' %}selected{% endif %}>Size</option>
-                                <option value="modified" {% if filter_by == 'modified' %}selected{% endif %}>Modified Date</option>
-                                <option value="type" {% if filter_by == 'type' %}selected{% endif %}>File Type</option>
-                            </select>
-                            
-                            <select name="sort">
-                                <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Ascending</option>
-                                <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Descending</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit">Apply Filters</button>
-                    <a href="/browse/{{ subpath }}" style="display: inline-block; margin-left: 10px;">Reset</a>
-                </form>
-            </div>
-            
-            {% if filtered_items %}
-                <div style="margin-bottom: 5px;">
-                    <strong>Found {{ filtered_items|length }} items{% if file_type_filter != 'all' %} ({{ file_type_filter }}){% endif %}:</strong>
+                    <!-- Upload Button and Hidden File Input -->
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">📤 Upload Here</button>
+                    <input type="file" id="fileInput" style="display:none" onchange="uploadFile(event)">
+                    <span id="upload-status"></span>
                 </div>
-                
-                <!-- Grid layout for images -->
-                {% if file_type_filter == 'image' %}
-                    <div class="grid-container">
+                <div class="filter-container">
+                    <h3>Filter Options</h3>
+                    <form method="get" action="">
+                        <input type="hidden" name="file_type" id="file_type_input" value="{{ file_type_filter }}">
+                        <div class="type-filter-options">
+                            <button type="button" class="type-filter-btn {% if file_type_filter == 'all' %}active{% endif %}" onclick="setFileType('all')">All Files</button>
+                            <button type="button" class="type-filter-btn {% if file_type_filter == 'directory' %}active{% endif %}" onclick="setFileType('directory')">📁 Folders</button>
+                            {% for type in file_types %}
+                                <button type="button" class="type-filter-btn {% if file_type_filter == type %}active{% endif %}" onclick="setFileType('{{ type }}')">
+                                    {{ file_icons[type] }} {{ type|capitalize }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                        <div class="filter-options">
+                            <div class="filter-group">
+                                <label for="search">Search:</label>
+                                <input type="text" id="search" name="search" class="search-box" value="{{ search_term }}" placeholder="Search by filename">
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter_by">Sort by:</label>
+                                <select id="filter_by" name="filter_by">
+                                    <option value="name" {% if filter_by == 'name' %}selected{% endif %}>Name</option>
+                                    <option value="size" {% if filter_by == 'size' %}selected{% endif %}>Size</option>
+                                    <option value="modified" {% if filter_by == 'modified' %}selected{% endif %}>Modified Date</option>
+                                    <option value="type" {% if filter_by == 'type' %}selected{% endif %}>File Type</option>
+                                </select>
+                                <select name="sort">
+                                    <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Ascending</option>
+                                    <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Descending</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit">Apply Filters</button>
+                        <a href="/browse/{{ subpath }}" style="display: inline-block; margin-left: 10px; color: #ef4444; font-weight: 600;">Reset</a>
+                    </form>
+                </div>
+                {% if filtered_items %}
+                    <div style="margin-bottom: 8px; font-weight: 600; color: #2563eb;">
+                        Found {{ filtered_items|length }} items{% if file_type_filter != 'all' %} ({{ file_type_filter }}){% endif %}:
+                    </div>
+                    {% if file_type_filter == 'image' %}
+                        <div class="grid-container">
+                            {% for item in filtered_items %}
+                                <div class="grid-item">
+                                    <button class="delete-btn" onclick="deleteFileFromList(event, '{{ item.rel_path }}', '{{ item.name }}')" title="Delete this image">🗑️</button>
+                                    <a href="/view/{{ item.rel_path }}" onclick="storePrevPath(event)">
+                                        <img src="/raw/{{ item.rel_path }}" alt="{{ item.name }}" class="grid-thumbnail" onerror="this.onerror=null;this.src='data:image/svg+xml;charset=utf-8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 24 24\"><rect width=\"24\" height=\"24\" fill=\"%23f0f0f0\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"10px\" fill=\"%23999\">NO PREVIEW</text></svg>'">
+                                        <span class="grid-filename">{{ item.name }}</span>
+                                        <span class="grid-info">{{ (item.size/1024)|round(2) }} KB</span>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="file-list">
                         {% for item in filtered_items %}
-                            <div class="grid-item">
-                                <button class="delete-btn" 
-                                        onclick="deleteFileFromList(event, '{{ item.rel_path }}', '{{ item.name }}')"
-                                        title="Delete this image">🗑️</button>
-                                <a href="/view/{{ item.rel_path }}" onclick="storePrevPath(event)">
-                                    <img src="/raw/{{ item.rel_path }}" 
-                                         alt="{{ item.name }}" 
-                                         class="grid-thumbnail"
-                                         onerror="this.onerror=null;this.src='data:image/svg+xml;charset=utf-8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 24 24\"><rect width=\"24\" height=\"24\" fill=\"%23f0f0f0\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"10px\" fill=\"%23999\">NO PREVIEW</text></svg>'">
-                                    <span class="grid-filename">{{ item.name }}</span>
-                                    <span class="grid-info">{{ (item.size/1024)|round(2) }} KB</span>
+                            <div class="file-row">
+                                <a href="{% if item.type == 'directory' %}/browse/{{ subpath }}/{{ item.name }}{% else %}/view/{{ item.rel_path }}{% endif %}" {% if item.type != 'directory' %}onclick="storePrevPath(event)"{% endif %} style="flex: 1 1 auto;">
+                                    <span class="file-icon">{{ file_icons[item.type] }}</span>
+                                    <span class="file-name">{{ item.name }}</span>
+                                    {% if item.type != 'directory' %}
+                                    <span class="file-info">
+                                        <span class="file-type">{{ item.type|upper }}</span>
+                                        <span class="file-size">{{ (item.size/1024)|round(2) }} KB</span>
+                                        <span class="file-date">{{ item.modified }}</span>
+                                    </span>
+                                    {% endif %}
                                 </a>
+                                {% if item.type != 'directory' %}
+                                <button class="delete-btn-list" onclick="deleteFileFromList(event, '{{ item.rel_path }}', '{{ item.name }}')" title="Delete this file">🗑️</button>
+                                {% endif %}
                             </div>
                         {% endfor %}
-                    </div>
-                {% else %}
-                    <!-- Existing list view for other file types -->
-                    {% for item in filtered_items %}
-                        <div style="display: flex; align-items: center; position: relative;">
-                            <a href="{% if item.type == 'directory' %}/browse/{{ subpath }}/{{ item.name }}{% else %}/view/{{ item.rel_path }}{% endif %}" {% if item.type != 'directory' %}onclick="storePrevPath(event)"{% endif %} style="flex: 1 1 auto;">
-                                <span class="file-icon">{{ file_icons[item.type] }}</span>
-                                {{ item.name }}
-                                {% if item.type != 'directory' %}
-                                <span class="file-info">
-                                    <span class="file-type">{{ item.type|upper }}</span>
-                                    <span class="file-size">{{ (item.size/1024)|round(2) }} KB</span>
-                                    <span class="file-date">{{ item.modified }}</span>
-                                </span>
-                                {% endif %}
-                            </a>
-                            {% if item.type != 'directory' %}
-                            <button class="delete-btn-list" onclick="deleteFileFromList(event, '{{ item.rel_path }}', '{{ item.name }}')" title="Delete this file">🗑️</button>
-                            {% endif %}
                         </div>
-                    {% endfor %}
+                    {% endif %}
+                {% else %}
+                    <p class="warning">No items found{% if file_type_filter != 'all' %} of type {{ file_type_filter }}{% endif %}{% if search_term %} matching "{{ search_term }}"{% endif %}</p>
                 {% endif %}
-            {% else %}
-                <p class="warning">No items found{% if file_type_filter != 'all' %} of type {{ file_type_filter }}{% endif %}{% if search_term %} matching "{{ search_term }}"{% endif %}</p>
-            {% endif %}
-            
-            <script>
-                function setFileType(type) {
-                    document.getElementById('file_type_input').value = type;
-                    // Update active button styling
-                    document.querySelectorAll('.type-filter-btn').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    event.target.classList.add('active');
-                }
-                
-                function deleteFileFromList(event, relPath, fileName) {
-                    event.preventDefault();
-                    if (confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) {
-                        fetch('/delete/' + encodeURIComponent(relPath), {
-                            method: 'DELETE'
-                        })
+                <script>
+                    function setFileType(type) {
+                        document.getElementById('file_type_input').value = type;
+                        document.querySelectorAll('.type-filter-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        event.target.classList.add('active');
+                    }
+                    function deleteFileFromList(event, relPath, fileName) {
+                        event.preventDefault();
+                        if (confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) {
+                            fetch('/delete/' + encodeURIComponent(relPath), { method: 'DELETE' })
+                            .then(response => {
+                                if (response.ok) { location.reload(); }
+                                else { alert('Failed to delete file. Server responded with status: ' + response.status); }
+                            })
+                            .catch(error => { alert('Error deleting file: ' + error.message); });
+                        }
+                    }
+                    function storePrevPath(event) {
+                        sessionStorage.setItem('prevPath', window.location.pathname + window.location.search);
+                    }
+                    function handleBack(event) {
+                        if (event) event.preventDefault();
+                        const prevPath = sessionStorage.getItem('prevPath');
+                        if (prevPath) {
+                            sessionStorage.removeItem('prevPath');
+                            window.location.href = prevPath;
+                        } else {
+                            window.location.href = "/browse/";
+                        }
+                    }
+                    function deleteCurrentFile(event, relPath) {
+                        event.preventDefault();
+                        if (!confirm('Are you sure you want to delete this file? This cannot be undone.')) return;
+                        fetch('/delete/' + encodeURIComponent(relPath), { method: 'DELETE' })
                         .then(response => {
+                            if (response.ok) { handleBack(); }
+                            else { alert('Failed to delete file. Server responded with status: ' + response.status); }
+                        })
+                        .catch(error => { alert('Error deleting file: ' + error.message); });
+                    }
+                    function uploadFile(event) {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        const status = document.getElementById('upload-status');
+                        status.textContent = 'Uploading...';
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        // Send AJAX POST to /upload with ?path=current_path
+                        fetch('/upload?path={{ subpath }}', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(async response => {
                             if (response.ok) {
-                                // Refresh the page after deletion
-                                location.reload();
+                                status.textContent = 'Upload successful!';
+                                setTimeout(() => { status.textContent = ''; location.reload(); }, 800);
                             } else {
-                                alert('Failed to delete file. Server responded with status: ' + response.status);
+                                let msg = 'Upload failed.';
+                                try { const data = await response.json(); msg = data.error || msg; } catch {}
+                                status.textContent = msg;
+                                setTimeout(() => { status.textContent = ''; }, 2000);
                             }
                         })
-                        .catch(error => {
-                            alert('Error deleting file: ' + error.message);
+                        .catch(() => {
+                            status.textContent = 'Upload failed.';
+                            setTimeout(() => { status.textContent = ''; }, 2000);
                         });
                     }
-                }
-
-                // Store previous path before opening image full view
-                function storePrevPath(event) {
-                    sessionStorage.setItem('prevPath', window.location.pathname + window.location.search);
-                    // Let the link proceed as normal
-                }
-
-                // Back button handler
-                function handleBack(event) {
-                    if (event) event.preventDefault();
-                    const prevPath = sessionStorage.getItem('prevPath');
-                    if (prevPath) {
-                        sessionStorage.removeItem('prevPath');
-                        window.location.href = prevPath;
-                    } else {
-                        window.location.href = "/browse/";
-                    }
-                }
-
-                // Delete current file in full view
-                function deleteCurrentFile(event, relPath) {
-                    event.preventDefault();
-                    if (!confirm('Are you sure you want to delete this file? This cannot be undone.')) return;
-                    fetch('/delete/' + encodeURIComponent(relPath), {
-                        method: 'DELETE'
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            handleBack();
-                        } else {
-                            alert('Failed to delete file. Server responded with status: ' + response.status);
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error deleting file: ' + error.message);
-                    });
-                }
-            </script>
+                </script>
+            </div>
         </body>
         </html>
     ''', 
@@ -744,15 +774,17 @@ def view_file(filename):
         <html>
         <head>
             <title>{{ filename }}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap" rel="stylesheet">
             <style>
-                body { margin: 0; padding: 0; }
+                body { margin: 0; padding: 0; background: #111; font-family: 'Inter', Arial, sans-serif; }
                 .content-container {
                     position: fixed;
                     top: 0;
                     left: 0;
-                    width: 100%;
-                    height: 100%;
-                    padding: 20px;
+                    width: 100vw;
+                    height: 100vh;
+                    padding: 0;
                     box-sizing: border-box;
                     overflow: auto;
                     display: flex;
@@ -762,108 +794,184 @@ def view_file(filename):
                 }
                 .toolbar {
                     position: fixed;
-                    top: 10px;
-                    right: 10px;
+                    top: 18px;
+                    right: 18px;
                     z-index: 100;
-                    background: #000000;
-                    padding: 5px;
-                    border-radius: 5px;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    background: #18181b;
+                    padding: 7px 14px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.13);
                     display: flex;
+                    gap: 10px;
                 }
-                .toolbar a {
+                .toolbar a, .toolbar button {
                     display: inline-block;
-                    padding: 5px 10px;
-                    margin: 0 5px;
-                    background: #000000;
+                    padding: 7px 16px;
+                    margin: 0 2px;
+                    background: #2563eb;
                     text-decoration: none;
-                    border-radius: 3px;
-                    font-size: 14px;
-                    color: #FFFFFF;
+                    border-radius: 6px;
+                    font-size: 1em;
+                    color: #fff;
+                    font-weight: 600;
+                    border: none;
+                    cursor: pointer;
+                    transition: background 0.2s;
                 }
-                .toolbar a:hover {
-                    background: #00FF00;
-                    color: #000;
+                .toolbar a:hover, .toolbar button:hover {
+                    background: #1e40af;
+                    color: #fff;
                 }
                 pre {
                     white-space: pre-wrap;
                     word-wrap: break-word;
+                    background: #18181b;
+                    color: #f1f5f9;
+                    padding: 24px;
+                    border-radius: 12px;
+                    font-size: 1.1em;
+                    max-width: 90vw;
+                    max-height: 80vh;
+                    overflow: auto;
                 }
                 .image-container {
-                    max-width: 100%;
-                    max-height: 100%;
+                    max-width: 90vw;
+                    max-height: 80vh;
                     text-align: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
                 .image-container img {
                     max-width: 100%;
-                    max-height: 100%;
+                    max-height: 80vh;
                     object-fit: contain;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
                 }
                 .nav-arrow {
                     position: fixed;
                     top: 50%;
                     transform: translateY(-50%);
-                    font-size: 40px;
-                    color: rgba(255,255,255,0.7);
+                    font-size: 48px;
+                    color: #fff;
                     text-decoration: none;
-                    background: rgba(0,0,0,0.3);
+                    background: rgba(37,99,235,0.7);
                     width: 60px;
                     height: 100px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    opacity: 0.5;
-                    transition: opacity 0.3s;
+                    opacity: 0.7;
+                    transition: opacity 0.3s, background 0.2s;
                     z-index: 101;
+                    border-radius: 0 12px 12px 0;
+                }
+                .nav-arrow.next-arrow {
+                    right: 0;
+                    left: auto;
+                    border-radius: 12px 0 0 12px;
+                }
+                .nav-arrow.prev-arrow {
+                    left: 0;
+                    right: auto;
                 }
                 .nav-arrow:hover {
                     opacity: 1;
-                    color: white;
-                    background: rgba(0,0,0,0.7);
-                }
-                .prev-arrow {
-                    left: 0;
-                    border-radius: 0 5px 5px 0;
-                }
-                .next-arrow {
-                    right: 0;
-                    border-radius: 5px 0 0 5px;
+                    background: #2563eb;
                 }
                 .nav-arrow.hidden {
                     display: none;
                 }
+                .close-btn {
+                    position: fixed;
+                    top: 18px;
+                    left: 18px;
+                    z-index: 9999;
+                    background: #18181b;
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 44px;
+                    height: 44px;
+                    font-size: 1.3em;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    pointer-events: auto;
+                    font-weight: 600;
+                }
+                .close-btn:hover {
+                    background: #ef4444;
+                    color: #fff;
+                }
+                .delete-float-btn {
+                    position: fixed;
+                    top: 18px;
+                    right: 80px;
+                    z-index: 9999;
+                    background: #ef4444;
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 44px;
+                    height: 44px;
+                    font-size: 1.3em;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    pointer-events: auto;
+                    font-weight: 600;
+                }
+                .delete-float-btn:hover {
+                    background: #b91c1c;
+                }
+                .delete-btn-fullview {
+                    margin-left: 10px;
+                    background: #ef4444;
+                    color: #fff;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 7px 18px;
+                    font-size: 1em;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                .delete-btn-fullview:hover {
+                    background: #b91c1c;
+                }
+                @media (max-width: 700px) {
+                    .toolbar { top: 8px; right: 8px; padding: 4px 6px; }
+                    .close-btn, .delete-float-btn { top: 8px; left: 8px; right: 8px; width: 36px; height: 36px; font-size: 1em; }
+                    .content-container { padding: 0; }
+                    pre { padding: 10px; font-size: 1em; }
+                }
             </style>
         </head>
         <body>
-            <!-- Floating delete icon for all files except directories -->
-            {% if file_type != 'directory' %}
-            <button class="delete-float-btn" onclick="deleteCurrentFile(event, '{{ rel_path }}')" title="Delete this file">🗑️</button>
-            {% endif %}
-            <!-- Close icon for full screen image view -->
             {% if file_type == 'image' %}
-            <button class="close-btn" onclick="handleBack(event)" title="Close (Esc)">Close</button>
+            <button class="close-btn" onclick="handleBack(event)" title="Close (Esc)">✕</button>
             {% endif %}
             <div class="toolbar">
                 <a href="#" onclick="handleBack(event)">Back</a>
                 <a href="/download/{{ filename }}" download>Download</a>
-                {% if file_type != 'directory' %}
-                <button class="delete-btn-fullview" onclick="deleteCurrentFile(event, '{{ rel_path }}')" title="Delete this file">🗑️ Delete</button>
-                {% endif %}
+              
             </div>
-            
-            <!-- Navigation arrows -->
             {% if nav_info and nav_info.prev %}
                 <a href="/view/{{ nav_info.prev }}" class="nav-arrow prev-arrow">❮</a>
             {% else %}
                 <a class="nav-arrow prev-arrow hidden">❮</a>
             {% endif %}
-            
             {% if nav_info and nav_info.next %}
                 <a href="/view/{{ nav_info.next }}" class="nav-arrow next-arrow">❯</a>
             {% else %}
                 <a class="nav-arrow next-arrow hidden">❯</a>
             {% endif %}
-            
             <div class="content-container">
                 {% if file_type == 'image' %}
                     <div class="image-container">
@@ -873,31 +981,18 @@ def view_file(filename):
                     {{ content|safe }}
                 {% endif %}
             </div>
-            
             <script>
-                // Keyboard navigation for images
                 document.addEventListener('keydown', function(event) {
                     const prevLink = document.querySelector('.prev-arrow:not(.hidden)');
                     const nextLink = document.querySelector('.next-arrow:not(.hidden)');
-                    
-                    // Left arrow key
                     if (event.key === 'ArrowLeft' && prevLink) {
                         window.location.href = prevLink.href;
-                    }
-                    // Right arrow key
-                    else if (event.key === 'ArrowRight' && nextLink) {
+                    } else if (event.key === 'ArrowRight' && nextLink) {
                         window.location.href = nextLink.href;
-                    }
-                    // Escape key
-                    else if (event.key === 'Escape') {
+                    } else if (event.key === 'Escape') {
                         handleBack();
                     }
                 });
-                
-                // Focus the content container for keyboard events
-                document.querySelector('.content-container').focus();
-
-                // Back button handler
                 function handleBack(event) {
                     if (event) event.preventDefault();
                     const prevPath = sessionStorage.getItem('prevPath');
@@ -956,14 +1051,25 @@ def upload_file():
     if request.method == 'POST':
         file = request.files.get('file')
         if not file or file.filename == '':
+            # If AJAX, return JSON error
+            if request.accept_mimetypes['application/json']:
+                return {"error": "No file selected"}, 400
             return "No file selected", 400
         try:
-            save_path = os.path.join(get_base_dir(), file.filename)
+            # Save to the correct subdirectory
+            save_dir = os.path.join(get_base_dir(), upload_path.strip('/'))
+            os.makedirs(save_dir, exist_ok=True)
+            save_path = os.path.join(save_dir, file.filename)
             file.save(save_path)
+            # If AJAX, return JSON success
+            if request.accept_mimetypes['application/json'] or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return {"success": True}, 200
             return redirect(f"/upload?path=/{upload_path.strip('./')}")
         except Exception as e:
+            if request.accept_mimetypes['application/json']:
+                return {"error": str(e)}, 500
             return f"Error: {str(e)}", 500
-
+    # Only show the upload page for direct GET requests
     return render_template_string('''
         <!DOCTYPE html>
         <html><head><title>Upload File</title>
