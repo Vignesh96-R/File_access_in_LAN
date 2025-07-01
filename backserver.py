@@ -63,12 +63,16 @@ def extract_html_from_mhtml(mhtml_path):
 def get_file_info(path, name):
     """Get file information for filtering"""
     full_path = os.path.join(path, name)
+    # Compute relative path from base dir
+    base_dir = get_base_dir()
+    rel_path = os.path.relpath(full_path, base_dir)
     stat = os.stat(full_path)
     is_dir = os.path.isdir(full_path)
     return {
         'name': name,
         'path': path,
         'full_path': full_path,
+        'rel_path': rel_path,
         'size': stat.st_size if not is_dir else 0,
         'created': time.ctime(stat.st_ctime),
         'modified': time.ctime(stat.st_mtime),
@@ -134,7 +138,9 @@ def get_file_preview(full_path):
         return None, None
     
     file_type = get_file_type(os.path.basename(full_path))
-    
+    # Compute rel_path for use in URLs
+    base_dir = get_base_dir()
+    rel_path = os.path.relpath(full_path, base_dir)
     try:
         if file_type == 'mhtml':
             content = extract_html_from_mhtml(full_path)
@@ -143,17 +149,16 @@ def get_file_preview(full_path):
         
         elif file_type == 'pdf':
             return f'''
-                <embed src="/raw/{full_path}" type="application/pdf" width="100%" height="100%">
-                <p>Can't display PDF? <a href="/download/{full_path}">Download instead</a></p>
+                <embed src="/raw/{rel_path}" type="application/pdf" width="100%" height="100%">
             ''', 'text/html'
         
         elif file_type == 'image':
-            return f'<img src="/raw/{full_path}" style="max-width: 100%; max-height: 100%;">', 'text/html'
+            return f'<img src="/raw/{rel_path}" style="max-width: 100%; max-height: 100%;">', 'text/html'
         
         elif file_type == 'video':
             return f'''
                 <video controls style="max-width: 100%; max-height: 100%;">
-                    <source src="/raw/{full_path}" type="{mimetypes.guess_type(full_path)[0]}">
+                    <source src="/raw/{rel_path}" type="{mimetypes.guess_type(full_path)[0]}">
                     Your browser does not support the video tag.
                 </video>
             ''', 'text/html'
@@ -161,7 +166,7 @@ def get_file_preview(full_path):
         elif file_type == 'audio':
             return f'''
                 <audio controls>
-                    <source src="/raw/{full_path}" type="{mimetypes.guess_type(full_path)[0]}">
+                    <source src="/raw/{rel_path}" type="{mimetypes.guess_type(full_path)[0]}">
                     Your browser does not support the audio element.
                 </audio>
             ''', 'text/html'
@@ -183,7 +188,7 @@ def get_file_preview(full_path):
                     <li>Size: {(file_info['size']/1024):.2f} KB</li>
                     <li>Modified: {file_info['modified']}</li>
                 </ul>
-                <p><a href="/download/{full_path}">Download this file</a></p>
+                <p><a href="/download/{rel_path}">Download this file</a></p>
             ''', 'text/html'
     
     except Exception as e:
@@ -440,6 +445,30 @@ def file_selector(subpath=''):
                 .delete-btn:hover {
                     background: rgba(255,0,0,0.9);
                 }
+
+                .close-btn {
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    z-index: 9999;
+                    background: rgba(0,0,0,0.7);
+                    color: #fff;
+                    border: none;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    font-size: 2em;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s;
+                    pointer-events: auto;
+                }
+                .close-btn:hover {
+                    background: #ff3333;
+                    color: #fff;
+                }
             </style>
         </head>
         <body>
@@ -508,10 +537,10 @@ def file_selector(subpath=''):
                         {% for item in filtered_items %}
                             <div class="grid-item">
                                 <button class="delete-btn" 
-                                        onclick="deleteImage('{{ item.full_path }}', '{{ item.name }}')"
+                                        onclick="deleteImage('{{ item.rel_path }}', '{{ item.name }}')"
                                         title="Delete this image">×</button>
-                                <a href="/view/{{ item.full_path }}">
-                                    <img src="/raw/{{ item.full_path }}" 
+                                <a href="/view/{{ item.rel_path }}" onclick="storePrevPath(event)">
+                                    <img src="/raw/{{ item.rel_path }}" 
                                          alt="{{ item.name }}" 
                                          class="grid-thumbnail"
                                          onerror="this.onerror=null;this.src='data:image/svg+xml;charset=utf-8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 24 24\"><rect width=\"24\" height=\"24\" fill=\"%23f0f0f0\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"10px\" fill=\"%23999\">NO PREVIEW</text></svg>'">
@@ -524,7 +553,7 @@ def file_selector(subpath=''):
                 {% else %}
                     <!-- Existing list view for other file types -->
                     {% for item in filtered_items %}
-                        <a href="{% if item.type == 'directory' %}/browse/{{ subpath }}/{{ item.name }}{% else %}/view/{{ item.full_path }}{% endif %}">
+                        <a href="{% if item.type == 'directory' %}/browse/{{ subpath }}/{{ item.name }}{% else %}/view/{{ item.rel_path }}{% endif %}" {% if item.type != 'directory' %}onclick="storePrevPath(event)"{% endif %}>
                             <span class="file-icon">{{ file_icons[item.type] }}</span>
                             {{ item.name }}
                             {% if item.type != 'directory' %}
@@ -570,6 +599,24 @@ def file_selector(subpath=''):
                         });
                     }
                 }
+
+                // Store previous path before opening image full view
+                function storePrevPath(event) {
+                    sessionStorage.setItem('prevPath', window.location.pathname + window.location.search);
+                    // Let the link proceed as normal
+                }
+
+                // Back button handler
+                function handleBack(event) {
+                    if (event) event.preventDefault();
+                    const prevPath = sessionStorage.getItem('prevPath');
+                    if (prevPath) {
+                        sessionStorage.removeItem('prevPath');
+                        window.location.href = prevPath;
+                    } else {
+                        window.location.href = "/browse/";
+                    }
+                }
             </script>
         </body>
         </html>
@@ -589,10 +636,11 @@ def file_selector(subpath=''):
 
 @app.route('/view/<path:filename>')
 def view_file(filename):
-    if not os.path.exists(filename):
+    abs_path = os.path.join(get_base_dir(), filename)
+    if not os.path.exists(abs_path):
         abort(404, "File not found")
     
-    if os.path.isdir(filename):
+    if os.path.isdir(abs_path):
         return file_selector(filename)
     
     # Get navigation info for images
@@ -601,19 +649,20 @@ def view_file(filename):
     
     if file_type == 'image':
         # Get all images in the same directory
-        images = get_sibling_images(filename)
-        current_name = os.path.basename(filename)
+        images = get_sibling_images(abs_path)
+        current_name = os.path.basename(abs_path)
         
         # Find current position and get next/previous
         for i, img in enumerate(images):
             if img['name'] == current_name:
                 if i > 0:
-                    nav_info['prev'] = images[i-1]['path']
+                    # Convert to rel_path for navigation
+                    nav_info['prev'] = os.path.relpath(images[i-1]['path'], get_base_dir())
                 if i < len(images) - 1:
-                    nav_info['next'] = images[i+1]['path']
+                    nav_info['next'] = os.path.relpath(images[i+1]['path'], get_base_dir())
                 break
     
-    preview_content, content_type = get_file_preview(filename)
+    preview_content, content_type = get_file_preview(abs_path)
     
     return render_template_string('''
         <!DOCTYPE html>
@@ -711,8 +760,12 @@ def view_file(filename):
             </style>
         </head>
         <body>
+            <!-- Close icon for full screen image view -->
+            {% if file_type == 'image' %}
+            <button class="close-btn" onclick="handleBack(event)" title="Close (Esc)">Close</button>
+            {% endif %}
             <div class="toolbar">
-                <a href="{{ back_link }}">Back</a>
+                <a href="#" onclick="handleBack(event)">Back</a>
                 <a href="/download/{{ filename }}" download>Download</a>
             </div>
             
@@ -755,12 +808,24 @@ def view_file(filename):
                     }
                     // Escape key
                     else if (event.key === 'Escape') {
-                        window.location.href = "{{ back_link or '/' }}";
+                        handleBack();
                     }
                 });
                 
                 // Focus the content container for keyboard events
                 document.querySelector('.content-container').focus();
+
+                // Back button handler
+                function handleBack(event) {
+                    if (event) event.preventDefault();
+                    const prevPath = sessionStorage.getItem('prevPath');
+                    if (prevPath) {
+                        sessionStorage.removeItem('prevPath');
+                        window.location.href = prevPath;
+                    } else {
+                        window.location.href = "/browse/";
+                    }
+                }
             </script>
         </body>
         </html>
@@ -775,28 +840,30 @@ def view_file(filename):
 @app.route('/raw/<path:filename>')
 def raw_file(filename):
     """Serve raw file for embedding in preview"""
-    if not os.path.exists(filename):
+    abs_path = os.path.join(get_base_dir(), filename)
+    if not os.path.exists(abs_path):
         abort(404, "File not found")
     
     # Security check to prevent directory traversal
-    if '../' in filename or not os.path.isfile(filename):
+    if '../' in filename or not os.path.isfile(abs_path):
         abort(403, "Access denied")
     
-    return send_file(filename)
+    return send_file(abs_path)
 
 @app.route('/delete/<path:filename>', methods=['DELETE'])
 def delete_file(filename):
     """Delete a file"""
-    if not os.path.exists(filename):
+    abs_path = os.path.join(get_base_dir(), filename)
+    if not os.path.exists(abs_path):
         abort(404, "File not found")
     
-    if not os.path.isfile(filename):
+    if not os.path.isfile(abs_path):
         abort(400, "Not a file")
     
     try:
-        os.remove(filename)
+        os.remove(abs_path)
         # Return to the directory of the deleted file
-        directory = os.path.dirname(filename)
+        directory = os.path.dirname(abs_path)
         return '', 204  # No content response
     except Exception as e:
         abort(500, f"Could not delete file: {str(e)}")
@@ -834,13 +901,14 @@ def upload_file():
 
 @app.route('/download/<path:filename>')
 def download_file(filename):
-    if not os.path.exists(filename):
+    abs_path = os.path.join(get_base_dir(), filename)
+    if not os.path.exists(abs_path):
         abort(404, "File not found")
     
     return send_file(
-        filename,
+        abs_path,
         as_attachment=True,
-        download_name=os.path.basename(filename),
+        download_name=os.path.basename(abs_path),
         mimetype='application/octet-stream'
     )
 
